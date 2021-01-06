@@ -119,7 +119,8 @@ include/sel4/sel4_arch/invocation.h: $(LIBSEL4_DIR)/sel4_arch_include/$(SEL4_ARC
 	$(VERBOSE)python -B $(LIBSEL4_DIR)/tools/invocation_header_gen.py \
 	                 --xml $< --libsel4 --sel4_arch --dest $@
 
-include/sel4/arch/invocation.h: $(LIBSEL4_DIR)/arch_include/$(ARCH)/interfaces/sel4arch.xml
+                     #include/sel4/arch/invocation.h: $(LIBSEL4_DIR)/arch_include/$(ARCH)/interfaces/sel4arch.xml
+include/sel4/arch/invocation.h: $(LIBSEL4_DIR)/arch_include/arm/interfaces/sel4arch.xml
 	$(MSG_CONVERT)arch/$(notdir $@)
 	$(VERBOSE)mkdir -p $(dir $@)
 	$(VERBOSE)python -B $(LIBSEL4_DIR)/tools/invocation_header_gen.py \
