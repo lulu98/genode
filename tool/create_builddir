@@ -13,7 +13,7 @@ PLATFORM = $(MAKECMDGOALS)
 PLATFORMS = arm_v6 arm_v7a arm_v8a riscv x86_32 x86_64 linux
 
 PLATFORMS_DEPR = imx53_qsb imx53_qsb_tz imx6q_sabrelite imx7d_sabre \
-                 nit6_solox pbxa9 riscv_spike rpi \
+                 nit6_solox pbxa9 riscv_spike rpi rpi4 \
                  usb_armory wand_quad zynq_qemu muen
 
 PLATFORM_ALT(imx53_qsb)       = arm_v7a
@@ -28,6 +28,7 @@ PLATFORM_ALT(rpi)             = arm_v6
 PLATFORM_ALT(usb_armory)      = arm_v7a
 PLATFORM_ALT(wand_quad)       = arm_v7a
 PLATFORM_ALT(zynq_qemu)       = arm_v7a
+PLATFORM_ALT(rpi4)             = arm_v8a
 
 
 usage:
@@ -128,6 +129,7 @@ BUILD_CONF(imx7d_sabre)     := $(BUILD_CONF_ARM_V7)
 BUILD_CONF(nit6_solox)      := $(BUILD_CONF_ARM_V7)
 BUILD_CONF(pbxa9)           := $(BUILD_CONF_ARM_V7)
 BUILD_CONF(rpi)             := $(BUILD_CONF_ARM_V6)
+BUILD_CONF(rpi4)             := $(BUILD_CONF_ARM_V8)
 BUILD_CONF(usb_armory)      := $(BUILD_CONF_ARM_V7)
 BUILD_CONF(wand_quad)       := $(BUILD_CONF_ARM_V7)
 BUILD_CONF(zynq_qemu)       := $(BUILD_CONF_ARM_V7)
@@ -187,6 +189,7 @@ SPECS(linux)           := $(HOST_SPEC_ARCH)
 
 # deprecated platforms
 SPECS(rpi)             := arm_v6
+SPECS(rpi4)            := arm_v8a
 SPECS(imx53_qsb)       := arm_v7a
 SPECS(imx53_qsb_tz)    := arm_v7a
 SPECS(imx6q_sabrelite) := arm_v7a
