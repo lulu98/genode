@@ -2,9 +2,9 @@ LICENSE   := GPLv2
 VERSION   := git
 DOWNLOADS := sel4.git
 
-URL(sel4) := https://github.com/seL4/seL4.git
+URL(sel4) := https://github.com/lulu98/seL4.git
 # master branch, version 9.0.1
-REV(sel4) := 0dd40b6c43a290173ea7782b97afbbbddfa23b36
+REV(sel4) := 91c9f0ac7ca72876640fa5d5221bbbe93cf0a5ea 
 DIR(sel4) := src/kernel/sel4
 
 $(call check_tool,python)
@@ -31,3 +31,5 @@ default: $(DOWNLOADS)
 	$(VERBOSE)mkdir -p src/kernel/sel4/configs/imx7/imx7d_sabre
 	$(VERBOSE)mv src/kernel/sel4/configs/imx7/autoconf.h src/kernel/sel4/configs/imx7/imx7d_sabre/autoconf.h
 	$(VERBOSE)patch -p0 <$(REP_DIR)/patches/imx7d_sabre.config
+	$(VERBOSE)mkdir -p src/kernel/sel4/configs/bcm2711/rpi4
+	$(VERBOSE)mv src/kernel/sel4/configs/bcm2711/autoconf.h src/kernel/sel4/configs/bcm2711/rpi4/autoconf.h
