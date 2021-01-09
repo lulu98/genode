@@ -4,7 +4,7 @@ DOWNLOADS := sel4.git
 
 URL(sel4) := https://github.com/lulu98/seL4.git
 # master branch, version 9.0.1
-REV(sel4) := 91c9f0ac7ca72876640fa5d5221bbbe93cf0a5ea 
+REV(sel4) := e4ea781e6fe137a84706606ee54a3f1e1384c919
 DIR(sel4) := src/kernel/sel4
 
 $(call check_tool,python)
@@ -17,6 +17,7 @@ PATCHES   := $(sort $(wildcard $(REP_DIR)/patches/*.patch))
 
 HASH_INPUT += $(REP_DIR)/patches/imx6q_sabrelite.config
 HASH_INPUT += $(REP_DIR)/patches/imx7d_sabre.config
+HASH_INPUT += $(REP_DIR)/patches/rpi4.config
 
 # adjust kernel config usable on qemu and on native hw, and add a 32bit version
 default: $(DOWNLOADS)
@@ -33,3 +34,4 @@ default: $(DOWNLOADS)
 	$(VERBOSE)patch -p0 <$(REP_DIR)/patches/imx7d_sabre.config
 	$(VERBOSE)mkdir -p src/kernel/sel4/configs/bcm2711/rpi4
 	$(VERBOSE)mv src/kernel/sel4/configs/bcm2711/autoconf.h src/kernel/sel4/configs/bcm2711/rpi4/autoconf.h
+	$(VERBOSE)patch -p0 <$(REP_DIR)/patches/rpi4.config

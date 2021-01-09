@@ -103,8 +103,8 @@ proc run_boot_dir {binaries} {
 			set ::env(PLAT) imx6
 		} elseif {[have_spec imx7d_sabre]} {
 			set ::env(PLAT) imx7
-		} elseif {[have_spec rpi4]} {
-			set ::env(PLAT) rpi4
+		} elseif {[have_spec bcm2711]} {
+			set ::env(PLAT) bcm2711
 		} else {
 			puts "abort - unknown ARM board"
 			exit 1

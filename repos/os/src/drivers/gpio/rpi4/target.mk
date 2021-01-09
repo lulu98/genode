@@ -1,5 +1,5 @@
 TARGET   = rpi_gpio_drv
-REQUIRES = arm_v8
+REQUIRES = arm_v7
 SRC_CC  += main.cc
 LIBS     = base
 INC_DIR += $(PRG_DIR)
