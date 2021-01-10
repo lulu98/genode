@@ -17,6 +17,7 @@ PATCHES   := $(sort $(wildcard $(REP_DIR)/patches/*.patch))
 
 HASH_INPUT += $(REP_DIR)/patches/imx6q_sabrelite.config
 HASH_INPUT += $(REP_DIR)/patches/imx7d_sabre.config
+HASH_INPUT += $(REP_DIR)/patches/rpi4.config
 
 # adjust kernel config usable on qemu and on native hw, and add a 32bit version
 default: $(DOWNLOADS)
@@ -33,3 +34,4 @@ default: $(DOWNLOADS)
 	$(VERBOSE)patch -p0 <$(REP_DIR)/patches/imx7d_sabre.config
 	$(VERBOSE)mkdir -p src/kernel/sel4/configs/bcm2711/rpi4
 	$(VERBOSE)mv src/kernel/sel4/configs/bcm2711/autoconf.h src/kernel/sel4/configs/bcm2711/rpi4/autoconf.h
+	$(VERBOSE)patch -p0 <$(REP_DIR)/patches/rpi4.config
