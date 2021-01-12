@@ -17,7 +17,7 @@
 /* Genode includes */
 #include <util/mmio.h>
 
-namespace Rpi {
+namespace Rpi4 {
 	enum {
 		RAM_0_BASE = 0x00000000,
 		RAM_0_SIZE = 0x10000000, /* XXX ? */
@@ -25,7 +25,7 @@ namespace Rpi {
 		MMIO_0_BASE = 0xfe000000,
 		MMIO_0_SIZE = 0x01800000,
 
-		SYSTEM_TIMER_IRQ       = 1,
+		SYSTEM_TIMER_IRQ       = 97,
 		SYSTEM_TIMER_MMIO_BASE = 0xfe003000,
 		SYSTEM_TIMER_MMIO_SIZE = 0x1000,
 		SYSTEM_TIMER_CLOCK     = 1000000,
