@@ -35,6 +35,6 @@ src/tool/sel4_tools: src/kernel/sel4
 content:
 	mv lib/mk/spec/arm/ld-sel4.mk lib/mk/spec/arm/ld.mk;
 	sed -i "s/ld-sel4/ld/"          src/lib/ld/sel4/target.mk
-	sed -i "s/rpi4_timer_drv/timer/" src/timer/epit/rpi4/target.inc
+	sed -i "s/rpi4_timer_drv/timer/" src/timer/sp804/rpi4/target.inc
 
 
