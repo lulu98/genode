@@ -17,10 +17,10 @@
 /* Genode includes */
 #include <util/mmio.h>
 
-namespace Rpi4 {
+namespace Rpi {
 	enum {
 		RAM_0_BASE = 0x00000000,
-		RAM_0_SIZE = 0x10000000, /* XXX ? */
+		RAM_0_SIZE = 0x20000000, /* XXX ? */
 
 		MMIO_0_BASE = 0xfe000000,
 		MMIO_0_SIZE = 0x01800000,
@@ -30,7 +30,12 @@ namespace Rpi4 {
 		SYSTEM_TIMER_MMIO_SIZE = 0x1000,
 		SYSTEM_TIMER_CLOCK     = 1000000,
 
-		PL011_0_IRQ       = 153,
+		SP804_TIMER_IRQ       = 64,
+		SP804_TIMER_MMIO_BASE = 0xfe00b000,
+		SP804_TIMER_MMIO_SIZE = 0x1000,
+		SP804_TIMER_CLOCK     = 1000000,
+		
+        PL011_0_IRQ       = 153,
 		PL011_0_MMIO_BASE = 0xfe201000,
 		PL011_0_MMIO_SIZE = 0x1000,
 		PL011_0_CLOCK     = 3000000,
