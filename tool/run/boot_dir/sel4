@@ -4,6 +4,7 @@ proc binary_name_timer     { } {
 	if {[have_spec imx6]}        { return "imx6_timer_drv" }
 	if {[have_spec imx7d_sabre]} { return "imx7_timer_drv" }
 	if {[have_spec x86]}         { return "pit_timer_drv"  }
+	if {[have_spec rpi3]}         { return "rpi3_timer_drv"  }
 	if {[have_spec rpi4]}         { return "rpi4_timer_drv"  }
 	puts "unknown platform - no timer driver"
 	exit -1
@@ -103,6 +104,8 @@ proc run_boot_dir {binaries} {
 			set ::env(PLAT) imx6
 		} elseif {[have_spec imx7d_sabre]} {
 			set ::env(PLAT) imx7
+		} elseif {[have_spec rpi3]} {
+			set ::env(PLAT) bcm2837
 		} elseif {[have_spec rpi4]} {
 			set ::env(PLAT) bcm2711
 		} else {
@@ -165,6 +168,7 @@ proc base_src { } {
 	if {[have_spec x86]}             { return base-sel4-x86 }
 	if {[have_spec imx6q_sabrelite]} { return base-sel4-imx6q_sabrelite }
 	if {[have_spec imx7d_sabre]}     { return base-sel4-imx7d_sabre }
+	if {[have_spec rpi3]}            { return base-sel4-rpi3 }
 	if {[have_spec rpi4]}            { return base-sel4-rpi4 }
 
 	global specs
