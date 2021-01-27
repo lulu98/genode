@@ -3,8 +3,8 @@ VERSION   := git
 DOWNLOADS := sel4_tools.git
 
 URL(sel4_tools) := https://github.com/lulu98/seL4_tools.git
-# Basic port - 32-bit
-REV(sel4_tools) := 31599715360c361e7f1750cb2d6dc6d1d1595fee
+# Basic port - 64-bit
+REV(sel4_tools) := 72d30721fc143510696848cb44705f5ec8e73e64
 DIR(sel4_tools) := src/tool/sel4_tools
 
 $(call check_tool,python)

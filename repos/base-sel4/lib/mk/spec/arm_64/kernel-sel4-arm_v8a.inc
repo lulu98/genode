@@ -22,7 +22,7 @@ elfloader/elfloader.o:
 	$(VERBOSE)ln -s $(SEL4_DIR)/configs/$(PLAT)/$(BOARD)/autoconf.h $(LIB_CACHE_DIR)/$(LIB)/elfloader/include/generated/
 	$(VERBOSE)$(MAKE) -C $(LIB_CACHE_DIR)/$(LIB)/elfloader \
 	          TOOLPREFIX=$(CROSS_DEV_PREFIX) \
-	          ARCH=arm PLAT=$(PLAT) ARMV=armv8-a __ARM_64__="y" \
+	          ARCH=arm PLAT=$(PLAT) ARMV=armv8-a SEL4_ARCH=aarch64 __ARM_64__="y" \
 	          CPU=$(CPU) ASFLAGS="-march=armv8-a" \
 	          CFLAGS="-march=armv8-a -D__KERNEL_64__ -fno-builtin" \
 	          SEL4_COMMON=.  SOURCE_DIR=.  STAGE_DIR=.  srctree=.
@@ -30,5 +30,5 @@ elfloader/elfloader.o:
 build_kernel: elfloader/elfloader.o
 	$(VERBOSE)$(MAKE) \
 	          TOOLPREFIX=$(CROSS_DEV_PREFIX) \
-	          BOARD=$(BOARD) ARCH=arm PLAT=$(PLAT) CPU=$(CPU) ARMV=armv8-a DEBUG=1 \
+	          BOARD=$(BOARD) ARCH=arm PLAT=$(PLAT) CPU=$(CPU) SEL4_ARCH=aarch64 ARMV=armv8-a DEBUG=1 \
 	          SOURCE_ROOT=$(SEL4_DIR) -f$(SEL4_DIR)/Makefile

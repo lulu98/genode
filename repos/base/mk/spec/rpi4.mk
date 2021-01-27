@@ -3,4 +3,4 @@ SPECS += arm_v8 usb framebuffer gpio
 
 REP_INC_DIR += include/spec/rpi
 
-include $(BASE_DIR)/mk/spec/arm_v8a_32.mk
+include $(BASE_DIR)/mk/spec/arm_v8a.mk

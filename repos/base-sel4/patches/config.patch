@@ -11,6 +11,25 @@
  DEFINES += -DHAVE_AUTOCONF
  ifdef DEBUG
  DEFINES += -DCONFIG_DEBUG_BUILD
+@@ -306,10 +306,18 @@
+ DEFINES += -DCONFIG_USER_STACK_TRACE_LENGTH=1
+ endif
+ ifeq (${ARCH}, arm)
++ifeq (${SEL4_ARCH}, aarch32)
+ CFLAGS += -mtune=${CPU} -marm -march=${ARMV}
+ ASFLAGS += -Wa,-mcpu=${CPU} -Wa,-march=${ARMV}
+ DEFINES += -D$(shell echo ${ARMV}|tr [:lower:] [:upper:]|tr - _)
+ DEFINES += -DARCH_ARM
++endif
++ifeq (${SEL4_ARCH}, aarch64)
++CFLAGS += -mtune=${CPU} -march=${ARMV}
++ASFLAGS += -Wa,-mcpu=${CPU} -Wa,-march=${ARMV}
++DEFINES += -D$(shell echo ${ARMV}|tr [:lower:] [:upper:]|tr - _)
++DEFINES += -DARCH_ARM
++endif
+ ifeq (${SEL4_ARCH}, aarch32)
+ DEFINES += -D__KERNEL_32__ -DAARCH32
+ TYPE_SUFFIX:=32
 --- src/kernel/sel4/src/plat/pc99/linker.lds
 +++ src/kernel/sel4/src/plat/pc99/linker.lds
 @@ -16,13 +16,13 @@
