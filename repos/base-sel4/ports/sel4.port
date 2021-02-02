@@ -4,11 +4,16 @@ DOWNLOADS := sel4.git
 
 URL(sel4) := https://github.com/lulu98/seL4.git
 # master branch, version 9.0.1
-REV(sel4) := 7e4add641e14b1e2569f5cc7d7f4a63e944dfec9
-# GIC-400
-# REV(sel4) := 87cd32214e8346f40e99e3add0bcee06322e1206
-# Legacy IC
-# REV(sel4) := 1721837586e1fbf8c93c31b126aa7aa1812e4b12
+# Basic Port - 32-bit
+REV(sel4) := 4d41314d6bdbd49a133361c2ab48eef992e4f680
+# GIC-PL390 - 32-bit
+# REV(sel4) := 24143a45fb2876733214fa5ee66627bf402a4440
+# GIC-400 - 32-bit
+# REV(sel4) := fdfc129844bc0d635e57e4c086e714e47e75e583
+# Legacy IC - 32-bit
+# REV(sel4) := 90241edcd989b6f7feee9e2a97266f227fd973b4
+# ARMv7a - 32-bit
+# REV(sel4) := e4ea781e6fe137a84706606ee54a3f1e1384c919
 DIR(sel4) := src/kernel/sel4
 
 $(call check_tool,python)
