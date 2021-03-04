@@ -1,0 +1,11 @@
+LICENSE   := BSD
+VERSION   := 43.3
+
+DOWNLOADS := circle.git
+
+URL(circle) := https://github.com/rsta2/circle.git
+REV(circle) := bbc9264ead9dc9e0cf5fc2d4530c26b55ca78c29
+DIR(circle) := src/lib/circle
+
+PATCHES   := src/drivers/nic/rpi/patches/*.patch
+PATCH_OPT := -p1 -d src/lib/circle

@@ -1,0 +1,1593 @@
+diff --git a/include/circle/bcm54213.h b/include/circle/bcm54213.h
+index c530636..6ead159 100644
+--- a/include/circle/bcm54213.h
++++ b/include/circle/bcm54213.h
+@@ -28,10 +28,15 @@
+ 
+ #include <circle/netdevice.h>
+ #include <circle/macaddress.h>
+-#include <circle/timer.h>
+-#include <circle/spinlock.h>
++// #include <circle/timer.h>
++// #include <circle/spinlock.h>
+ #include <circle/types.h>
+ 
++#include <base/env.h>
++#include <base/mutex.h>
++#include <base/allocator.h>
++#include <timer_session/connection.h>
++
+ #define GENET_DESC_INDEX	16	// max. 16 priority queues and 1 default queue
+ 
+ struct TGEnetCB				// buffer control block
+@@ -72,28 +77,35 @@ struct TGEnetRxRing			// ring of Rx buffers
+ class CBcm54213Device : public CNetDevice	/// Driver for BCM54213PE Gigabit Ethernet Transceiver
+ {
+ public:
++	CBcm54213Device (Genode::Env & env, Genode::Allocator & md_alloc);
+ 	CBcm54213Device (void);
+ 	~CBcm54213Device (void);
+ 
++	//--------------------------------------------------------------------------
++	// will resolve -Werror=effc+
++	CBcm54213Device (const CBcm54213Device &pBcm54213Device);
++	const CBcm54213Device &operator = (const CBcm54213Device &rBcm54213Device);
++	//--------------------------------------------------------------------------
++
+ 	boolean Initialize (void);
+ 
+-	const CMACAddress *GetMACAddress (void) const;
++	const CMACAddress *GetMACAddress (void) const override;
+ 
+ 	// returns TRUE if TX ring has currently free buffers
+-	boolean IsSendFrameAdvisable (void);
++	boolean IsSendFrameAdvisable (void) override;
+ 
+-	boolean SendFrame (const void *pBuffer, unsigned nLength);
++	boolean SendFrame (const void *pBuffer, unsigned nLength) override;
+ 
+ 	// pBuffer must have size FRAME_BUFFER_SIZE
+-	boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength);
++	boolean ReceiveFrame (void *pBuffer, unsigned *pResultLength) override;
+ 
+ 	// returns TRUE if PHY link is up
+-	boolean IsLinkUp (void);
++	boolean IsLinkUp (void) override;
+ 
+-	TNetDeviceSpeed GetLinkSpeed (void);
++	TNetDeviceSpeed GetLinkSpeed (void) override;
+ 
+ 	// update device settings according to PHY status
+-	boolean UpdatePHY (void);
++	boolean UpdatePHY (void) override;
+ 
+ private:
+ 	// UMAC
+@@ -171,8 +183,11 @@ private:
+ 	// PHY device
+ 	int phy_read_status(void);
+ 
++	u32 GetBaseClock(void);
++
+ private:
+-	CTimer *m_pTimer;
++	Timer::Connection                 m_timer;
++	// CTimer *m_pTimer;
+ 	CMACAddress m_MACAddress;
+ 	boolean m_bInterruptConnected;
+ 
+@@ -197,7 +212,10 @@ private:
+ 	int m_old_duplex;
+ 	int m_old_pause;
+ 
+-	CSpinLock m_TxSpinLock;
++	Genode::Allocator			&_allocator;
++	Genode::Env					&_env;
++	Genode::Mutex     m_TxMutex { };
++	// CSpinLock m_TxSpinLock;
+ };
+ 
+ #endif
+diff --git a/include/circle/bcmmailbox.h b/include/circle/bcmmailbox.h
+index 8422f48..8fd72da 100644
+--- a/include/circle/bcmmailbox.h
++++ b/include/circle/bcmmailbox.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -21,13 +21,17 @@
+ #define _circle_bcmmailbox_h
+ 
+ #include <circle/bcm2835.h>
+-#include <circle/spinlock.h>
++// #include <circle/spinlock.h>
+ #include <circle/types.h>
+ 
++#include <base/env.h>
++#include <base/mutex.h>
++#include <timer_session/connection.h>
++
+ class CBcmMailBox
+ {
+ public:
+-	CBcmMailBox (unsigned nChannel,
++	CBcmMailBox (Genode::Env &env, unsigned nChannel,
+ 		     boolean bEarlyUse = FALSE);	// do not use spinlock early
+ 	~CBcmMailBox (void);
+ 
+@@ -43,7 +47,10 @@ private:
+ 	unsigned m_nChannel;
+ 	boolean m_bEarlyUse;
+ 
+-	static CSpinLock s_SpinLock;
++	Timer::Connection     	m_timer;
++	// static Genode::Mutex s_Mutex;
++	Genode::Mutex     s_Mutex { };
++	// static CSpinLock s_SpinLock;
+ };
+ 
+ #endif
+diff --git a/include/circle/bcmpropertytags.h b/include/circle/bcmpropertytags.h
+index da1010b..497ff7b 100644
+--- a/include/circle/bcmpropertytags.h
++++ b/include/circle/bcmpropertytags.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -16,7 +16,7 @@
+ //
+ // You should have received a copy of the GNU General Public License
+ // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-// 
++//
+ #ifndef _circle_bcmpropertytags_h
+ #define _circle_bcmpropertytags_h
+ 
+@@ -24,6 +24,10 @@
+ #include <circle/macros.h>
+ #include <circle/types.h>
+ 
++#include <base/env.h>
++#include <base/ram_allocator.h>
++#include <base/allocator.h>
++
+ #define PROPTAG_END			0x00000000
+ 
+ #define PROPTAG_GET_FIRMWARE_REVISION	0x00000001
+@@ -278,19 +282,20 @@ PACKED;
+ class CBcmPropertyTags
+ {
+ public:
+-	CBcmPropertyTags (boolean bEarlyUse = FALSE);		// do not use spinlock early
++	CBcmPropertyTags (Genode::Env &env, Genode::Allocator &md_alloc, boolean bEarlyUse = FALSE);		//default bEarlyUse=false, do not use spinlock early
+ 	~CBcmPropertyTags (void);
+ 
+ 	boolean GetTag (u32	  nTagId,			// tag identifier
+ 			void	 *pTag,				// pointer to tag struct
+ 			unsigned  nTagSize,			// size of tag struct
+ 			unsigned  nRequestParmSize = 0);	// number of parameter bytes
+-	
++
+ 	boolean GetTags (void	 *pTags,			// pointer to tags struct
+ 			 unsigned nTagsSize);			// size of tags struct
+ 
+ private:
+ 	CBcmMailBox m_MailBox;
++	Genode::Allocator				 &_allocator;
+ };
+ 
+ #endif
+diff --git a/include/circle/device.h b/include/circle/device.h
+index befb35f..2864c26 100644
+--- a/include/circle/device.h
++++ b/include/circle/device.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -32,6 +32,12 @@ public:
+ 	CDevice (void);
+ 	virtual ~CDevice (void);
+ 
++	//--------------------------------------------------------------------------
++	// will resolve -Werror=effc+
++	CDevice (const CDevice &pDevice);
++	const CDevice &operator = (const CDevice &rDevice);
++	//--------------------------------------------------------------------------
++
+ 	// returns number of read bytes or < 0 on failure
+ 	virtual int Read (void *pBuffer, size_t nCount);
+ 
+diff --git a/include/circle/interrupt.h b/include/circle/interrupt.h
+index 70b8b96..14fdc7e 100644
+--- a/include/circle/interrupt.h
++++ b/include/circle/interrupt.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -32,6 +32,12 @@ public:
+ 	CInterruptSystem (void);
+ 	~CInterruptSystem (void);
+ 
++	//--------------------------------------------------------------------------
++	// will resolve -Werror=effc+
++	CInterruptSystem (const CInterruptSystem &pInterruptSystem);
++	const CInterruptSystem &operator = (const CInterruptSystem &rInterruptSystem);
++	//--------------------------------------------------------------------------
++
+ 	boolean Initialize (void);
+ 
+ 	void ConnectIRQ (unsigned nIRQ, TIRQHandler *pHandler, void *pParam);
+diff --git a/include/circle/logger.h b/include/circle/logger.h
+index b065090..baae1da 100644
+--- a/include/circle/logger.h
++++ b/include/circle/logger.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -51,6 +51,12 @@ public:
+ 	CLogger (unsigned nLogLevel, CTimer *pTimer = 0);	// time is not logged if pTimer is 0
+ 	~CLogger (void);
+ 
++	//--------------------------------------------------------------------------
++	// will resolve -Werror=effc+
++	CLogger (const CLogger &pLogger);
++	const CLogger &operator = (const CLogger &rLogger);
++	//--------------------------------------------------------------------------
++
+ 	boolean Initialize (CDevice *pTarget);
+ 
+ 	void SetNewTarget (CDevice *pTarget);
+diff --git a/include/circle/macaddress.h b/include/circle/macaddress.h
+index d4625c4..4910db5 100644
+--- a/include/circle/macaddress.h
++++ b/include/circle/macaddress.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -21,6 +21,7 @@
+ #define _circle_macaddress_h
+ 
+ #include <circle/string.h>
++// #include <string.h>
+ #include <circle/types.h>
+ 
+ #define MAC_ADDRESS_SIZE	6
+@@ -34,7 +35,7 @@ public:
+ 
+ 	boolean operator== (const CMACAddress &rAddress2) const;
+ 	boolean operator!= (const CMACAddress &rAddress2) const;
+-	
++
+ 	void Set (const u8 *pAddress);
+ 	void SetBroadcast (void);
+ 	const u8 *Get (void) const;
+@@ -43,8 +44,8 @@ public:
+ 	boolean IsBroadcast (void) const;
+ 	unsigned GetSize (void) const;
+ 
+-	void Format (CString *pString) const;
+-	
++	void PrintAddress(void) const;
++
+ private:
+ 	boolean m_bValid;
+ 
+diff --git a/include/circle/ptrlist.h b/include/circle/ptrlist.h
+index 5d85c82..ab347b3 100644
+--- a/include/circle/ptrlist.h
++++ b/include/circle/ptrlist.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2015  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -28,6 +28,12 @@ public:
+ 	CPtrList (void);
+ 	~CPtrList (void);
+ 
++	//--------------------------------------------------------------------------
++	// will resolve -Werror=effc+
++	CPtrList (const CPtrList &pPtrList);
++	const CPtrList &operator = (const CPtrList &rPtrList);
++	//--------------------------------------------------------------------------
++
+ 	TPtrListElement *GetFirst (void);				// returns 0 if list is empty
+ 	TPtrListElement *GetNext (TPtrListElement *pElement);		// returns 0 if nothing follows
+ 
+diff --git a/include/circle/string.h b/include/circle/string.h
+index d48a7d4..42b5837 100644
+--- a/include/circle/string.h
++++ b/include/circle/string.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -20,13 +20,18 @@
+ #ifndef _circle_string_h
+ #define _circle_string_h
+ 
+-#include <circle/stdarg.h>
++// #include <circle/stdarg.h>
++#include <stdarg.h>
+ #include <circle/types.h>
+ 
+ class CString
+ {
+ public:
+ 	CString (void);
++	//--------------------------------------------------------------------------
++	// will resolve -Werror=effc+
++	CString (const CString &pString);
++	//--------------------------------------------------------------------------
+ 	CString (const char *pString);
+ 	virtual ~CString (void);
+ 
+@@ -49,7 +54,7 @@ private:
+ 	void PutChar (char chChar, size_t nCount = 1);
+ 	void PutString (const char *pString);
+ 	void ReserveSpace (size_t nSpace);
+-	
++
+ 	static char *ntoa (char *pDest, unsigned long ulNumber, unsigned nBase, boolean bUpcase);
+ #if STDLIB_SUPPORT >= 1
+ 	static char *lltoa (char *pDest, unsigned long long ullNumber, unsigned nBase, boolean bUpcase);
+diff --git a/include/circle/synchronize.h b/include/circle/synchronize.h
+index 917e550..a8184a2 100644
+--- a/include/circle/synchronize.h
++++ b/include/circle/synchronize.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -121,8 +121,8 @@ void SyncDataAndInstructionCache (void);
+ //
+ // Barriers
+ //
+-#define DataSyncBarrier()	asm volatile ("dsb" ::: "memory")
+-#define DataMemBarrier() 	asm volatile ("dmb" ::: "memory")
++#define DataSyncBarrier()	asm volatile ("dsb sy" ::: "memory")
++#define DataMemBarrier() 	asm volatile ("dmb sy" ::: "memory")
+ 
+ #define InstructionSyncBarrier() asm volatile ("isb" ::: "memory")
+ #define InstructionMemBarrier()	asm volatile ("isb" ::: "memory")
+diff --git a/include/circle/sysconfig.h b/include/circle/sysconfig.h
+index fbe92b4..a3828ed 100644
+--- a/include/circle/sysconfig.h
++++ b/include/circle/sysconfig.h
+@@ -5,7 +5,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+diff --git a/include/circle/timer.h b/include/circle/timer.h
+index 9105672..4fda75d 100644
+--- a/include/circle/timer.h
++++ b/include/circle/timer.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -43,6 +43,12 @@ public:
+ 	CTimer (CInterruptSystem *pInterruptSystem);
+ 	~CTimer (void);
+ 
++	//--------------------------------------------------------------------------
++	// will resolve -Werror=effc+
++	CTimer (const CTimer &pTimer);
++	const CTimer &operator = (const CTimer &rTimer);
++	//--------------------------------------------------------------------------
++
+ 	boolean Initialize (void);
+ 
+ 	/// \brief Sets the time zone (defaults to 0, GMT)
+@@ -115,7 +121,7 @@ public:
+ 	/// When a CTimer object is available better use this instead of SimpleusDelay()\n
+ 	/// \param nMicroSeconds Delay in microseconds
+ 	void usDelay (unsigned nMicroSeconds)	{ SimpleusDelay (nMicroSeconds); }
+-	
++
+ 	/// \return Pointer to the only CTimer object in the system
+ 	static CTimer *Get (void);
+ 
+diff --git a/include/circle/types.h b/include/circle/types.h
+index 6548f99..d0c2d96 100644
+--- a/include/circle/types.h
++++ b/include/circle/types.h
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2018  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -59,6 +59,6 @@ typedef char		boolean;
+ #define FALSE		0
+ #define TRUE		1
+ #endif
+-ASSERT_STATIC (sizeof (boolean) == 1);
++// ASSERT_STATIC (sizeof (boolean) == 1);
+ 
+ #endif
+diff --git a/lib/assert.cpp b/lib/assert.cpp
+index 3e23e33..458b3cd 100644
+--- a/lib/assert.cpp
++++ b/lib/assert.cpp
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -18,39 +18,23 @@
+ // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ //
+ #include <assert.h>
+-#include <circle/logger.h>
+-#include <circle/string.h>
+-#include <circle/interrupt.h>
+-#include <circle/synchronize.h>
+-#include <circle/sysconfig.h>
+-#include <circle/debug.h>
+-#include <circle/types.h>
++// #include <circle/logger.h>
++// #include <circle/string.h>
++// #include <circle/interrupt.h>
++// #include <circle/synchronize.h>
++// #include <circle/sysconfig.h>
++// #include <circle/debug.h>
++// #include <circle/types.h>
++
++#include <stdio.h>
+ 
+ #ifndef NDEBUG
+ 
+ void assertion_failed (const char *pExpr, const char *pFile, unsigned nLine)
+ {
+-	uintptr ulStackPtr;
+-	asm volatile ("mov %0,sp" : "=r" (ulStackPtr));
+-
+-	// if an assertion fails on FIQ_LEVEL, the system would otherwise hang in the next spin lock
+-	CInterruptSystem::DisableFIQ ();
+-	EnableFIQs ();
+-
+-	CString Source;
+-	Source.Format ("%s(%u)", pFile, nLine);
+-
+-#ifndef USE_RPI_STUB_AT
+-	debug_stacktrace ((const uintptr *) ulStackPtr, Source);
+-	
+-	CLogger::Get ()->Write (Source, LogPanic, "assertion failed: %s", pExpr);
+-#else
+-	CLogger::Get ()->Write (Source, LogError, "assertion failed: %s", pExpr);
+-
+-	Breakpoint (0);
+-#endif
++	printf("%s:%d - assertion failed: %s", pFile, nLine, pExpr);
+ 
+-	for (;;);
++	for(;;);
+ }
+ 
+ #endif
+diff --git a/lib/bcm54213.cpp b/lib/bcm54213.cpp
+index cf1361c..8f4ac93 100644
+--- a/lib/bcm54213.cpp
++++ b/lib/bcm54213.cpp
+@@ -38,12 +38,19 @@
+ #include <circle/memio.h>
+ #include <circle/bcm2711.h>
+ #include <circle/synchronize.h>
+-#include <circle/logger.h>
+-#include <circle/string.h>
+-#include <circle/util.h>
++// #include <circle/logger.h>
++// #include <circle/string.h>
++// #include <circle/util.h>
+ #include <circle/macros.h>
+ #include <assert.h>
+ 
++//------------------------------------------------------------------------------
++#include <stdio.h>
++#include <string.h>
++
++#define CLOCKHZ	1000000
++//------------------------------------------------------------------------------
++
+ #define GENET_V5			5	// the only supported GENET version
+ 
+ // HW params for GENET_V5
+@@ -577,13 +584,28 @@ GENET_IO_MACRO(rbuf, GENET_RBUF_OFF);
+ 
+ static const char FromBcm54213[] = "genet";
+ 
+-CBcm54213Device::CBcm54213Device (void)
+-:	m_pTimer (CTimer::Get ()),
++CBcm54213Device::CBcm54213Device (Genode::Env & env, Genode::Allocator & md_alloc)
++:	m_timer(env),
++	// m_pTimer (CTimer::Get ()),
++	m_MACAddress (0),
+ 	m_bInterruptConnected (FALSE),
+-	m_tx_cbs (0),
+-	m_rx_cbs (0)
+-{
+-	assert (m_pTimer != 0);
++	m_tx_cbs 	(0),
++	m_rx_cbs 	(0),
++	m_crc_fwd_en (FALSE),
++	m_phy_id 	(0),
++	m_link   	(0),			// 1: link is up
++	m_speed  	(0),			// 10, 100, 1000
++	m_duplex 	(0),			// 1: full duplex
++	m_pause  	(0),			// 1: pause capability
++	m_old_link 	(0),
++	m_old_speed (0),
++	m_old_duplex(0),
++	m_old_pause (0),
++	_allocator(md_alloc),
++	_env(env)
++	// m_TxSpinLock (CSpinLock())
++{
++	// assert (m_pTimer != 0);
+ }
+ 
+ CBcm54213Device::~CBcm54213Device (void)
+@@ -596,19 +618,21 @@ CBcm54213Device::~CBcm54213Device (void)
+ 	umac_reset2 ();
+ 	reset_umac ();
+ 
+-	if (m_bInterruptConnected)
+-	{
+-		CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_0);
+-		CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_1);
+-	}
++	// if (m_bInterruptConnected)
++	// {
++	// 	CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_0);
++	// 	CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_1);
++	// }
+ 
+ 	if (m_rx_cbs != 0)
+ 	{
+ 		free_rx_buffers ();
+ 	}
+ 
+-	delete [] m_tx_cbs;
+-	delete [] m_rx_cbs;
++	_allocator.free(m_tx_cbs,sizeof(m_tx_cbs));
++	_allocator.free(m_rx_cbs,sizeof(m_rx_cbs));
++	// delete [] m_tx_cbs;
++	// delete [] m_rx_cbs;
+ }
+ 
+ boolean CBcm54213Device::Initialize (void)
+@@ -625,9 +649,7 @@ boolean CBcm54213Device::Initialize (void)
+ 		major = 1;
+ 	if (major != GENET_V5)
+ 	{
+-		CLogger::Get ()->Write (FromBcm54213, LogError,
+-					"GENET version mismatch, got: %d, configured for: %d",
+-					(unsigned) major, GENET_V5);
++		printf("%s: GENET version mismatch, got: %d, configured for: %d",FromBcm54213,(unsigned) major, GENET_V5);
+ 
+ 		return FALSE;
+ 	}
+@@ -648,7 +670,7 @@ boolean CBcm54213Device::Initialize (void)
+ 	int ret = set_hw_addr();
+ 	if (ret)
+ 	{
+-		CLogger::Get ()->Write (FromBcm54213, LogError, "Cannot set MAC address (%d)", ret);
++		printf("%s: Cannot set MAC address (%d)",FromBcm54213, ret);
+ 
+ 		return FALSE;
+ 	}
+@@ -658,7 +680,7 @@ boolean CBcm54213Device::Initialize (void)
+ 	ret = init_dma();			// reinitialize TDMA and RDMA and SW housekeeping
+ 	if (ret)
+ 	{
+-		CLogger::Get ()->Write (FromBcm54213, LogError, "Failed to initialize DMA (%d)", ret);
++		printf("%s: Failed to initialize DMA (%d)",FromBcm54213,ret);
+ 
+ 		return FALSE;
+ 	}
+@@ -668,17 +690,17 @@ boolean CBcm54213Device::Initialize (void)
+ 	hfb_init();
+ 
+ 	assert (!m_bInterruptConnected);
+-	CInterruptSystem::Get ()->ConnectIRQ (ARM_IRQ_BCM54213_0, InterruptStub0, this);
+-	CInterruptSystem::Get ()->ConnectIRQ (ARM_IRQ_BCM54213_1, InterruptStub1, this);
++	// CInterruptSystem::Get ()->ConnectIRQ (ARM_IRQ_BCM54213_0, InterruptStub0, this);
++	// CInterruptSystem::Get ()->ConnectIRQ (ARM_IRQ_BCM54213_1, InterruptStub1, this);
+ 	m_bInterruptConnected = TRUE;
+ 
+ 	ret = mii_probe();
+ 	if (ret)
+ 	{
+-		CLogger::Get ()->Write (FromBcm54213, LogError, "Failed to connect to PHY (%d)", ret);
++		printf("%s: Failed to connect to PHY (%d)",FromBcm54213,ret);
+ 
+-		CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_0);
+-		CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_1);
++		// CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_0);
++		// CInterruptSystem::Get ()->DisconnectIRQ (ARM_IRQ_BCM54213_1);
+ 		m_bInterruptConnected = FALSE;
+ 
+ 		return FALSE;
+@@ -693,6 +715,24 @@ boolean CBcm54213Device::Initialize (void)
+ 	return TRUE;
+ }
+ 
++// Get the current base clock rate in Hz
++u32 CBcm54213Device::GetBaseClock (void)
++{
++	CBcmPropertyTags Tags(_env, _allocator);
++	TPropertyTagClockRate TagClockRate;
++
++	TagClockRate.nClockId = CLOCK_ID_CORE;
++	if (!Tags.GetTag (PROPTAG_GET_CLOCK_RATE, &TagClockRate, sizeof TagClockRate))
++	{
++		printf("Error: Cannot get clock rate");
++		// LogWrite (LogError, "Cannot get clock rate");
++
++		TagClockRate.nRate = 0;
++	}
++
++	return TagClockRate.nRate;
++}
++
+ const CMACAddress *CBcm54213Device::GetMACAddress (void) const
+ {
+ 	return &m_MACAddress;
+@@ -728,18 +768,21 @@ boolean CBcm54213Device::SendFrame (const void *pBuffer, unsigned nLength)
+ 
+ 	TGEnetTxRing *ring = &m_tx_rings[index];
+ 
+-	m_TxSpinLock.Acquire ();
++	m_TxMutex.acquire();
++	// m_TxSpinLock.Acquire ();
+ 
+ 	if (ring->free_bds < 2)				// is there room for this frame?
+ 	{
+-		CLogger::Get ()->Write (FromBcm54213, LogWarning, "TX frame dropped");
++		printf("%s: TX frame dropped",FromBcm54213);
+ 
+-		m_TxSpinLock.Release ();
++		m_TxMutex.release();
++		// m_TxSpinLock.Release ();
+ 
+ 		return FALSE;
+ 	}
+ 
+-	u8 *pTxBuffer = new u8[ENET_MAX_MTU_SIZE];	// allocate and fill DMA buffer
++	u8 *pTxBuffer = (u8 *) _allocator.alloc(ENET_MAX_MTU_SIZE);
++	// u8 *pTxBuffer = new u8[ENET_MAX_MTU_SIZE];	// allocate and fill DMA buffer
+ 	memcpy (pTxBuffer, pBuffer, nLength);
+ 	if (nLength < ETH_ZLEN)				// pad frame if necessary
+ 	{
+@@ -768,7 +811,8 @@ boolean CBcm54213Device::SendFrame (const void *pBuffer, unsigned nLength)
+ 	// packets are ready, update producer index
+ 	tdma_ring_writel(ring->index, ring->prod_index, TDMA_PROD_INDEX);
+ 
+-	m_TxSpinLock.Release ();
++	m_TxMutex.release();
++	// m_TxSpinLock.Release ();
+ 
+ 	return TRUE;
+ }
+@@ -817,7 +861,7 @@ boolean CBcm54213Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
+ 		u8 *pRxBuffer = rx_refill (cb);
+ 		if (pRxBuffer == 0)
+ 		{
+-			CLogger::Get ()->Write (FromBcm54213, LogWarning, "Missing RX buffer!");
++			printf("%s: Missing RX buffer!",FromBcm54213);
+ 
+ 			goto out;
+ 		}
+@@ -829,10 +873,10 @@ boolean CBcm54213Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
+ 		if (   !(dma_flag & DMA_EOP)
+ 		    || !(dma_flag & DMA_SOP))
+ 		{
+-			CLogger::Get ()->Write (FromBcm54213, LogWarning,
+-						"Dropping fragmented RX packet!");
++			printf("%s: Dropping fragmented RX packet!",FromBcm54213);
+ 
+-			delete [] pRxBuffer;
++			_allocator.free(pRxBuffer,sizeof(pRxBuffer));
++			// delete [] pRxBuffer;
+ 
+ 			goto out;
+ 		}
+@@ -840,10 +884,10 @@ boolean CBcm54213Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
+ 		// report errors
+ 		if (dma_flag & (DMA_RX_CRC_ERROR | DMA_RX_OV | DMA_RX_NO | DMA_RX_LG | DMA_RX_RXER))
+ 		{
+-			CLogger::Get ()->Write (FromBcm54213, LogWarning, "RX error (0x%x)",
+-						(unsigned) dma_flag);
++			printf("%s: RX error (0x%x)",FromBcm54213,(unsigned) dma_flag);
+ 
+-			delete [] pRxBuffer;
++			_allocator.free(pRxBuffer,sizeof(pRxBuffer));
++			// delete [] pRxBuffer;
+ 
+ 			goto out;
+ 		}
+@@ -863,7 +907,8 @@ boolean CBcm54213Device::ReceiveFrame (void *pBuffer, unsigned *pResultLength)
+ 
+ 		*pResultLength = nLength;
+ 
+-		delete [] pRxBuffer;
++		_allocator.free(pRxBuffer,sizeof(pRxBuffer));
++		// delete [] pRxBuffer;
+ 
+ 		bResult = TRUE;
+ 
+@@ -1023,6 +1068,7 @@ void CBcm54213Device::link_intr_enable(void)
+ 
+ void CBcm54213Device::tx_ring16_int_enable(TGEnetTxRing *ring)
+ {
++	(void)ring;
+ 	intrl2_0_writel(UMAC_IRQ_TXDMA_DONE, INTRL2_CPU_MASK_CLEAR);
+ }
+ 
+@@ -1033,12 +1079,13 @@ void CBcm54213Device::tx_ring_int_enable(TGEnetTxRing *ring)
+ 
+ void CBcm54213Device::rx_ring16_int_enable(TGEnetRxRing *ring)
+ {
++	(void)ring;
+ 	intrl2_0_writel(UMAC_IRQ_RXDMA_DONE, INTRL2_CPU_MASK_CLEAR);
+ }
+ 
+ int CBcm54213Device::set_hw_addr(void)
+ {
+-	CBcmPropertyTags Tags;
++	CBcmPropertyTags Tags(_env, _allocator);
+ 	TPropertyTagMACAddress MACAddress;
+ 	if (!Tags.GetTag (PROPTAG_GET_MAC_ADDRESS, &MACAddress, sizeof MACAddress))
+ 	{
+@@ -1047,10 +1094,10 @@ int CBcm54213Device::set_hw_addr(void)
+ 
+ 	m_MACAddress.Set (MACAddress.Address);
+ 
+-	CString MACString;
+-	m_MACAddress.Format (&MACString);
+-	CLogger::Get ()->Write (FromBcm54213, LogDebug, "MAC address is %s",
+-				(const char *) MACString);
++	m_MACAddress.PrintAddress();
++	// CString MACString;
++	// m_MACAddress.Format (&MACString);
++	// printf("%s: MAC address is %s",FromBcm54213,(const char *) MACString);
+ 
+ 	umac_writel(  (MACAddress.Address[0] << 24)
+ 		    | (MACAddress.Address[1] << 16)
+@@ -1139,7 +1186,8 @@ void CBcm54213Device::netif_start(void)
+ int CBcm54213Device::init_dma(void)
+ {
+ 	// Initialize common Rx ring structures
+-	m_rx_cbs = new TGEnetCB[TOTAL_DESC];
++	m_rx_cbs = (TGEnetCB *) _allocator.alloc(TOTAL_DESC);
++	// m_rx_cbs = new TGEnetCB[TOTAL_DESC];
+ 	if (!m_rx_cbs)
+ 		return -1;
+ 
+@@ -1154,10 +1202,12 @@ int CBcm54213Device::init_dma(void)
+ 	}
+ 
+ 	// Initialize common TX ring structures
+-	m_tx_cbs = new TGEnetCB[TOTAL_DESC];
++	m_tx_cbs = (TGEnetCB *) _allocator.alloc(TOTAL_DESC);
++	// m_tx_cbs = new TGEnetCB[TOTAL_DESC];
+ 	if (!m_tx_cbs)
+ 	{
+-		delete [] m_rx_cbs;
++		_allocator.free(m_rx_cbs,sizeof(m_rx_cbs));
++		// delete [] m_rx_cbs;
+ 		m_rx_cbs = 0;
+ 		return -1;
+ 	}
+@@ -1177,11 +1227,12 @@ int CBcm54213Device::init_dma(void)
+ 	int ret = init_rx_queues();
+ 	if (ret)
+ 	{
+-		CLogger::Get ()->Write (FromBcm54213, LogError,
+-					"Failed to initialize RX queues (%d)", ret);
++		printf("%s: Failed to initialize RX queues (%d)",FromBcm54213, ret);
+ 		free_rx_buffers();
+-		delete [] m_rx_cbs;
+-		delete [] m_tx_cbs;
++		_allocator.free(m_rx_cbs,sizeof(m_rx_cbs));
++		_allocator.free(m_tx_cbs,sizeof(m_tx_cbs));
++		// delete [] m_rx_cbs;
++		// delete [] m_tx_cbs;
+ 		return ret;
+ 	}
+ 
+@@ -1390,7 +1441,8 @@ void CBcm54213Device::free_tx_cb(TGEnetCB *cb)
+ 	if (buffer) {
+ 		cb->buffer = 0;
+ 
+-		delete [] buffer;
++		_allocator.free(buffer,sizeof(buffer));
++		// delete [] buffer;
+ 	}
+ }
+ 
+@@ -1485,14 +1537,16 @@ void CBcm54213Device::free_rx_buffers(void)
+ 	{
+ 		TGEnetCB *cb = &m_rx_cbs[i];
+ 		u8 *buffer = free_rx_cb(cb);
+-		delete [] buffer;
++		_allocator.free(buffer,sizeof(buffer));
++		// delete [] buffer;
+ 	}
+ }
+ 
+ u8 *CBcm54213Device::rx_refill(struct TGEnetCB *cb)
+ {
+ 	// Allocate a new Rx DMA buffer
+-	u8 *buffer = new u8[RX_BUF_LENGTH];
++	u8 *buffer = (u8 *) _allocator.alloc(RX_BUF_LENGTH);
++	// u8 *buffer = new u8[RX_BUF_LENGTH];
+ 	if (!buffer)
+ 		return 0;
+ 
+@@ -1546,7 +1600,8 @@ void CBcm54213Device::dmadesc_set_length_status(uintptr d, u32 value)
+ 
+ void CBcm54213Device::udelay (unsigned nMicroSeconds)
+ {
+-	m_pTimer->usDelay (nMicroSeconds);
++	m_timer.usleep(nMicroSeconds);
++	// m_pTimer->usDelay (nMicroSeconds);
+ }
+ 
+ // handle Rx and Tx default queues + other stuff
+@@ -1560,12 +1615,14 @@ void CBcm54213Device::InterruptHandler0 (void)
+ 	intrl2_0_writel(status, INTRL2_CPU_CLEAR);
+ 
+ 	if (status & UMAC_IRQ_TXDMA_DONE) {
+-		m_TxSpinLock.Acquire ();
++		m_TxMutex.acquire();
++		// m_TxSpinLock.Acquire ();
+ 
+ 		TGEnetTxRing *tx_ring = &m_tx_rings[GENET_DESC_INDEX];
+ 		tx_reclaim(tx_ring);
+ 
+-		m_TxSpinLock.Release ();
++		m_TxMutex.release();
++		// m_TxSpinLock.Release ();
+ 	}
+ }
+ 
+@@ -1579,7 +1636,8 @@ void CBcm54213Device::InterruptHandler1 (void)
+ 	// clear interrupts
+ 	intrl2_1_writel(status, INTRL2_CPU_CLEAR);
+ 
+-	m_TxSpinLock.Acquire ();
++	m_TxMutex.acquire();
++	// m_TxSpinLock.Acquire ();
+ 
+ 	// Check Tx priority queue interrupts
+ 	for (unsigned index = 0; index < TX_QUEUES; index++) {
+@@ -1590,7 +1648,8 @@ void CBcm54213Device::InterruptHandler1 (void)
+ 		tx_reclaim(tx_ring);
+ 	}
+ 
+-	m_TxSpinLock.Release ();
++	m_TxMutex.release();
++	// m_TxSpinLock.Release ();
+ }
+ 
+ void CBcm54213Device::InterruptStub0 (void *pParam)
+@@ -1708,6 +1767,7 @@ void CBcm54213Device::mii_setup(void)
+ 
+ int CBcm54213Device::mii_config(bool init)
+ {
++	(void)init;
+ 	// RGMII_NO_ID: TXC transitions at the same time as TXD
+ 	//		(requires PCB or receiver-side delay)
+ 	// RGMII:	Add 2ns delay on TXC (90 degree shift)
+@@ -1822,12 +1882,16 @@ void CBcm54213Device::mdio_write(int reg, u16 val)
+ // but a private function assigned by the GENET bcmmii module.
+ void CBcm54213Device::mdio_wait(void)
+ {
+-	assert (m_pTimer != 0);
+-	unsigned nStartTicks = m_pTimer->GetClockTicks ();
++	// assert (m_pTimer != 0);
++	unsigned base_clock = GetBaseClock();
++	unsigned nStartTicks = ((m_timer.curr_time().trunc_to_plain_us().value * 1e-6) - 1) * base_clock;
++	// unsigned nStartTicks = m_pTimer->GetClockTicks ();
+ 
+ 	do
+ 	{
+-		if (m_pTimer->GetClockTicks ()-nStartTicks >= CLOCKHZ / 100)
++		// if (m_pTimer->GetClockTicks ()-nStartTicks >= CLOCKHZ / 100)
++		unsigned nCurrTicks = ((m_timer.curr_time().trunc_to_plain_us().value * 1e-6) - 1) * base_clock;
++		if (nCurrTicks - nStartTicks >= CLOCKHZ / 100)
+ 		{
+ 			break;
+ 		}
+@@ -1866,8 +1930,7 @@ int CBcm54213Device::phy_read_status(void)
+ 		return ctrl1000;
+ 
+ 	if (lpagb & LPA_1000MSFAIL) {
+-		CLogger::Get ()->Write (FromBcm54213, LogWarning,
+-					"Master/Slave resolution failed (0x%X)", ctrl1000);
++		printf("%s: Master/Slave resolution failed (0x%X)",FromBcm54213,ctrl1000);
+ 		return -1;
+ 	}
+ 
+diff --git a/lib/bcmmailbox.cpp b/lib/bcmmailbox.cpp
+index 73f4323..c576f7d 100644
+--- a/lib/bcmmailbox.cpp
++++ b/lib/bcmmailbox.cpp
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -16,18 +16,21 @@
+ //
+ // You should have received a copy of the GNU General Public License
+ // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-// 
++//
+ #include <circle/bcmmailbox.h>
++#include <circle/bcm54213.h>
+ #include <circle/memio.h>
+-#include <circle/synchronize.h>
+-#include <circle/timer.h>
++// #include <circle/synchronize.h>
++// #include <circle/timer.h>
+ #include <assert.h>
+ 
+-CSpinLock CBcmMailBox::s_SpinLock (TASK_LEVEL);
++// Genode::Mutex CBcmMailBox::s_Mutex();
++// CSpinLock CBcmMailBox::s_SpinLock (TASK_LEVEL);
+ 
+-CBcmMailBox::CBcmMailBox (unsigned nChannel, boolean bEarlyUse)
++CBcmMailBox::CBcmMailBox (Genode::Env &env, unsigned nChannel, boolean bEarlyUse)
+ :	m_nChannel (nChannel),
+-	m_bEarlyUse (bEarlyUse)
++	m_bEarlyUse (bEarlyUse),
++	m_timer(env)
+ {
+ }
+ 
+@@ -37,11 +40,12 @@ CBcmMailBox::~CBcmMailBox (void)
+ 
+ u32 CBcmMailBox::WriteRead (u32 nData)
+ {
+-	PeripheralEntry ();
++	// PeripheralEntry ();
+ 
+ 	if (!m_bEarlyUse)
+ 	{
+-		s_SpinLock.Acquire ();
++		s_Mutex.acquire();
++		// s_SpinLock.Acquire ();
+ 	}
+ 
+ 	Flush ();
+@@ -52,10 +56,11 @@ u32 CBcmMailBox::WriteRead (u32 nData)
+ 
+ 	if (!m_bEarlyUse)
+ 	{
+-		s_SpinLock.Release ();
++		s_Mutex.release();
++		// s_SpinLock.Release ();
+ 	}
+ 
+-	PeripheralExit ();
++	// PeripheralExit ();
+ 
+ 	return nResult;
+ }
+@@ -66,21 +71,22 @@ void CBcmMailBox::Flush (void)
+ 	{
+ 		read32 (MAILBOX0_READ);
+ 
+-		CTimer::SimpleMsDelay (20);
++		m_timer.msleep(20);
++		// CTimer::SimpleMsDelay (20);
+ 	}
+ }
+ 
+ u32 CBcmMailBox::Read (void)
+ {
+ 	u32 nResult;
+-	
++
+ 	do
+ 	{
+ 		while (read32 (MAILBOX0_STATUS) & MAILBOX_STATUS_EMPTY)
+ 		{
+ 			// do nothing
+ 		}
+-		
++
+ 		nResult = read32 (MAILBOX0_READ);
+ 	}
+ 	while ((nResult & 0xF) != m_nChannel);		// channel number is in the lower 4 bits
+diff --git a/lib/bcmpropertytags.cpp b/lib/bcmpropertytags.cpp
+index a00a20e..b042f6a 100644
+--- a/lib/bcmpropertytags.cpp
++++ b/lib/bcmpropertytags.cpp
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -16,15 +16,18 @@
+ //
+ // You should have received a copy of the GNU General Public License
+ // along with this program.  If not, see <http://www.gnu.org/licenses/>.
+-// 
++//
+ #include <circle/bcmpropertytags.h>
+-#include <circle/util.h>
++// #include <circle/util.h>
+ #include <circle/synchronize.h>
+ #include <circle/bcm2835.h>
+-#include <circle/memory.h>
++// #include <circle/memory.h>
+ #include <circle/macros.h>
+ #include <assert.h>
+ 
++#include <string.h>
++#include <circle/bcm54213.h>
++
+ struct TPropertyBuffer
+ {
+ 	u32	nBufferSize;			// bytes
+@@ -37,8 +40,9 @@ struct TPropertyBuffer
+ }
+ PACKED;
+ 
+-CBcmPropertyTags::CBcmPropertyTags (boolean bEarlyUse)
+-:	m_MailBox (BCM_MAILBOX_PROP_OUT, bEarlyUse)
++CBcmPropertyTags::CBcmPropertyTags (Genode::Env &env, Genode::Allocator &md_alloc, boolean bEarlyUse)
++:	m_MailBox (env, BCM_MAILBOX_PROP_OUT, bEarlyUse),
++	_allocator(md_alloc)
+ {
+ }
+ 
+@@ -77,8 +81,9 @@ boolean CBcmPropertyTags::GetTags (void *pTags, unsigned nTagsSize)
+ 	unsigned nBufferSize = sizeof (TPropertyBuffer) + nTagsSize + sizeof (u32);
+ 	assert ((nBufferSize & 3) == 0);
+ 
+-	TPropertyBuffer *pBuffer =
+-		(TPropertyBuffer *) CMemorySystem::GetCoherentPage (COHERENT_SLOT_PROP_MAILBOX);
++	TPropertyBuffer *pBuffer= (TPropertyBuffer *) _allocator.alloc(FRAME_BUFFER_SIZE);
++	// TPropertyBuffer *pBuffer =
++	// 	(TPropertyBuffer *) CMemorySystem::GetCoherentPage (COHERENT_SLOT_PROP_MAILBOX);
+ 
+ 	pBuffer->nBufferSize = nBufferSize;
+ 	pBuffer->nCode = CODE_REQUEST;
+@@ -92,6 +97,7 @@ boolean CBcmPropertyTags::GetTags (void *pTags, unsigned nTagsSize)
+ 	u32 nBufferAddress = BUS_ADDRESS ((uintptr) pBuffer);
+ 	if (m_MailBox.WriteRead (nBufferAddress) != nBufferAddress)
+ 	{
++		_allocator.free(pBuffer,FRAME_BUFFER_SIZE);
+ 		return FALSE;
+ 	}
+ 
+@@ -99,10 +105,13 @@ boolean CBcmPropertyTags::GetTags (void *pTags, unsigned nTagsSize)
+ 
+ 	if (pBuffer->nCode != CODE_RESPONSE_SUCCESS)
+ 	{
++		_allocator.free(pBuffer,FRAME_BUFFER_SIZE);
+ 		return FALSE;
+ 	}
+ 
+ 	memcpy (pTags, pBuffer->Tags, nTagsSize);
+ 
++	_allocator.free(pBuffer,FRAME_BUFFER_SIZE);
++
+ 	return TRUE;
+ }
+diff --git a/lib/macaddress.cpp b/lib/macaddress.cpp
+index 6c8cdbc..28b8e4c 100644
+--- a/lib/macaddress.cpp
++++ b/lib/macaddress.cpp
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2019  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -21,12 +21,15 @@
+ #include <circle/util.h>
+ #include <assert.h>
+ 
++#include <stdio.h>
++
+ CMACAddress::CMACAddress (void)
+ :	m_bValid (FALSE)
+ {
+ }
+ 
+ CMACAddress::CMACAddress (const u8 *pAddress)
++:   m_bValid (FALSE)
+ {
+ 	Set (pAddress);
+ }
+@@ -93,11 +96,10 @@ unsigned CMACAddress::GetSize (void) const
+ 	return MAC_ADDRESS_SIZE;
+ }
+ 
+-void CMACAddress::Format (CString *pString) const
++void CMACAddress::PrintAddress (void) const
+ {
+ 	assert (m_bValid);
+-	assert (pString != 0);
+-	pString->Format ("%02X:%02X:%02X:%02X:%02X:%02X",
++	printf ("%02X:%02X:%02X:%02X:%02X:%02X",
+ 			(unsigned) m_Address[0], (unsigned) m_Address[1],
+ 			(unsigned) m_Address[2], (unsigned) m_Address[3],
+ 			(unsigned) m_Address[4], (unsigned) m_Address[5]);
+diff --git a/lib/string.cpp b/lib/string.cpp
+index 64da122..cfbea82 100644
+--- a/lib/string.cpp
++++ b/lib/string.cpp
+@@ -36,11 +36,15 @@
+ 
+ CString::CString (void)
+ :	m_pBuffer (0),
+-	m_nSize (0)
++	m_nSize (0),
++	m_pInPtr (0)
+ {
+ }
+ 
+ CString::CString (const char *pString)
++:	m_pBuffer (0),
++	m_nSize (0),
++	m_pInPtr (0)
+ {
+ 	m_nSize = strlen (pString)+1;
+ 
+@@ -97,7 +101,7 @@ size_t CString::GetLength (void) const
+ 	{
+ 		return 0;
+ 	}
+-	
++
+ 	return strlen (m_pBuffer);
+ }
+ 
+@@ -227,7 +231,7 @@ void CString::FormatV (const char *pFormat, va_list Args)
+ 			if (*++pFormat == '%')
+ 			{
+ 				PutChar ('%');
+-				
++
+ 				pFormat++;
+ 
+ 				continue;
+@@ -557,11 +561,11 @@ void CString::PutChar (char chChar, size_t nCount)
+ void CString::PutString (const char *pString)
+ {
+ 	size_t nLen = strlen (pString);
+-	
++
+ 	ReserveSpace (nLen);
+-	
++
+ 	strcpy (m_pInPtr, pString);
+-	
++
+ 	m_pInPtr += nLen;
+ }
+ 
+@@ -571,20 +575,20 @@ void CString::ReserveSpace (size_t nSpace)
+ 	{
+ 		return;
+ 	}
+-	
++
+ 	size_t nOffset = m_pInPtr - m_pBuffer;
+ 	size_t nNewSize = nOffset + nSpace + 1;
+ 	if (m_nSize >= nNewSize)
+ 	{
+ 		return;
+ 	}
+-	
++
+ 	nNewSize += FORMAT_RESERVE;
+ 	char *pNewBuffer = new char[nNewSize];
+-		
++
+ 	*m_pInPtr = '\0';
+ 	strcpy (pNewBuffer, m_pBuffer);
+-	
++
+ 	delete [] m_pBuffer;
+ 
+ 	m_pBuffer = pNewBuffer;
+@@ -711,7 +715,7 @@ char *CString::ftoa (char *pDest, double fNumber, unsigned nPrecision)
+ 
+ 	fNumber -= (double) iPart;
+ 	fNumber *= (double) nPrecPow10;
+-	
++
+ 	char Buffer[MAX_PRECISION+1];
+ 	ntoa (Buffer, (unsigned long) fNumber, 10, FALSE);
+ 
+@@ -722,6 +726,6 @@ char *CString::ftoa (char *pDest, double fNumber, unsigned nPrecision)
+ 	}
+ 
+ 	strcpy (p, Buffer);
+-	
++
+ 	return pDest;
+ }
+diff --git a/lib/synchronize64.cpp b/lib/synchronize64.cpp
+index dadec3b..a47da4f 100644
+--- a/lib/synchronize64.cpp
++++ b/lib/synchronize64.cpp
+@@ -3,7 +3,7 @@
+ //
+ // Circle - A C++ bare metal environment for Raspberry Pi
+ // Copyright (C) 2014-2020  R. Stange <rsta2@o2online.de>
+-// 
++//
+ // This program is free software: you can redistribute it and/or modify
+ // it under the terms of the GNU General Public License as published by
+ // the Free Software Foundation, either version 3 of the License, or
+@@ -21,6 +21,8 @@
+ #include <circle/sysconfig.h>
+ #include <assert.h>
+ 
++#include <stdio.h>
++
+ #define MAX_CRITICAL_LEVEL	20		// maximum nested level of EnterCritical()
+ 
+ unsigned CurrentExecutionLevel (void)
+@@ -178,145 +180,159 @@ void LeaveCritical (void)
+ 
+ void InvalidateDataCache (void)
+ {
+-	// invalidate L1 data cache
+-	for (register unsigned nSet = 0; nSet < L1_DATA_CACHE_SETS; nSet++)
+-	{
+-		for (register unsigned nWay = 0; nWay < L1_DATA_CACHE_WAYS; nWay++)
+-		{
+-			register u64 nSetWayLevel =   nWay << L1_SETWAY_WAY_SHIFT
+-						    | nSet << L1_SETWAY_SET_SHIFT
+-						    | 0 << SETWAY_LEVEL_SHIFT;
+-
+-			asm volatile ("dc isw, %0" : : "r" (nSetWayLevel) : "memory");
+-		}
+-	}
+-
+-	// invalidate L2 unified cache
+-	for (register unsigned nSet = 0; nSet < L2_CACHE_SETS; nSet++)
+-	{
+-		for (register unsigned nWay = 0; nWay < L2_CACHE_WAYS; nWay++)
+-		{
+-			register u64 nSetWayLevel =   nWay << L2_SETWAY_WAY_SHIFT
+-						    | nSet << L2_SETWAY_SET_SHIFT
+-						    | 1 << SETWAY_LEVEL_SHIFT;
+-
+-			asm volatile ("dc isw, %0" : : "r" (nSetWayLevel) : "memory");
+-		}
+-	}
+-
+-	DataSyncBarrier ();
++	printf("%s not implemented.",__func__);
++
++	// // invalidate L1 data cache
++	// for (register unsigned nSet = 0; nSet < L1_DATA_CACHE_SETS; nSet++)
++	// {
++	// 	for (register unsigned nWay = 0; nWay < L1_DATA_CACHE_WAYS; nWay++)
++	// 	{
++	// 		register u64 nSetWayLevel =   nWay << L1_SETWAY_WAY_SHIFT
++	// 					    | nSet << L1_SETWAY_SET_SHIFT
++	// 					    | 0 << SETWAY_LEVEL_SHIFT;
++
++	// 		asm volatile ("dc isw, %0" : : "r" (nSetWayLevel) : "memory");
++	// 	}
++	// }
++
++	// // invalidate L2 unified cache
++	// for (register unsigned nSet = 0; nSet < L2_CACHE_SETS; nSet++)
++	// {
++	// 	for (register unsigned nWay = 0; nWay < L2_CACHE_WAYS; nWay++)
++	// 	{
++	// 		register u64 nSetWayLevel =   nWay << L2_SETWAY_WAY_SHIFT
++	// 					    | nSet << L2_SETWAY_SET_SHIFT
++	// 					    | 1 << SETWAY_LEVEL_SHIFT;
++
++	// 		asm volatile ("dc isw, %0" : : "r" (nSetWayLevel) : "memory");
++	// 	}
++	// }
++
++	// DataSyncBarrier ();
+ }
+ 
+ void InvalidateDataCacheL1Only (void)
+ {
+-	// invalidate L1 data cache
+-	for (register unsigned nSet = 0; nSet < L1_DATA_CACHE_SETS; nSet++)
+-	{
+-		for (register unsigned nWay = 0; nWay < L1_DATA_CACHE_WAYS; nWay++)
+-		{
+-			register u64 nSetWayLevel =   nWay << L1_SETWAY_WAY_SHIFT
+-						    | nSet << L1_SETWAY_SET_SHIFT
+-						    | 0 << SETWAY_LEVEL_SHIFT;
+-
+-			asm volatile ("dc isw, %0" : : "r" (nSetWayLevel) : "memory");
+-		}
+-	}
+-
+-	DataSyncBarrier ();
++	printf("%s not implemented.",__func__);
++	// // invalidate L1 data cache
++	// for (register unsigned nSet = 0; nSet < L1_DATA_CACHE_SETS; nSet++)
++	// {
++	// 	for (register unsigned nWay = 0; nWay < L1_DATA_CACHE_WAYS; nWay++)
++	// 	{
++	// 		register u64 nSetWayLevel =   nWay << L1_SETWAY_WAY_SHIFT
++	// 					    | nSet << L1_SETWAY_SET_SHIFT
++	// 					    | 0 << SETWAY_LEVEL_SHIFT;
++
++	// 		asm volatile ("dc isw, %0" : : "r" (nSetWayLevel) : "memory");
++	// 	}
++	// }
++
++	// DataSyncBarrier ();
+ }
+ 
+ void CleanDataCache (void)
+ {
+-	// clean L1 data cache
+-	for (register unsigned nSet = 0; nSet < L1_DATA_CACHE_SETS; nSet++)
+-	{
+-		for (register unsigned nWay = 0; nWay < L1_DATA_CACHE_WAYS; nWay++)
+-		{
+-			register u64 nSetWayLevel =   nWay << L1_SETWAY_WAY_SHIFT
+-						    | nSet << L1_SETWAY_SET_SHIFT
+-						    | 0 << SETWAY_LEVEL_SHIFT;
+-
+-			asm volatile ("dc csw, %0" : : "r" (nSetWayLevel) : "memory");
+-		}
+-	}
+-
+-	// clean L2 unified cache
+-	for (register unsigned nSet = 0; nSet < L2_CACHE_SETS; nSet++)
+-	{
+-		for (register unsigned nWay = 0; nWay < L2_CACHE_WAYS; nWay++)
+-		{
+-			register u64 nSetWayLevel =   nWay << L2_SETWAY_WAY_SHIFT
+-						    | nSet << L2_SETWAY_SET_SHIFT
+-						    | 1 << SETWAY_LEVEL_SHIFT;
+-
+-			asm volatile ("dc csw, %0" : : "r" (nSetWayLevel) : "memory");
+-		}
+-	}
+-
+-	DataSyncBarrier ();
++	printf("%s not implemented.",__func__);
++	// // clean L1 data cache
++	// for (register unsigned nSet = 0; nSet < L1_DATA_CACHE_SETS; nSet++)
++	// {
++	// 	for (register unsigned nWay = 0; nWay < L1_DATA_CACHE_WAYS; nWay++)
++	// 	{
++	// 		register u64 nSetWayLevel =   nWay << L1_SETWAY_WAY_SHIFT
++	// 					    | nSet << L1_SETWAY_SET_SHIFT
++	// 					    | 0 << SETWAY_LEVEL_SHIFT;
++
++	// 		asm volatile ("dc csw, %0" : : "r" (nSetWayLevel) : "memory");
++	// 	}
++	// }
++
++	// // clean L2 unified cache
++	// for (register unsigned nSet = 0; nSet < L2_CACHE_SETS; nSet++)
++	// {
++	// 	for (register unsigned nWay = 0; nWay < L2_CACHE_WAYS; nWay++)
++	// 	{
++	// 		register u64 nSetWayLevel =   nWay << L2_SETWAY_WAY_SHIFT
++	// 					    | nSet << L2_SETWAY_SET_SHIFT
++	// 					    | 1 << SETWAY_LEVEL_SHIFT;
++
++	// 		asm volatile ("dc csw, %0" : : "r" (nSetWayLevel) : "memory");
++	// 	}
++	// }
++
++	// DataSyncBarrier ();
+ }
+ 
+ void InvalidateDataCacheRange (u64 nAddress, u64 nLength)
+ {
+-	while (1)
+-	{
+-		asm volatile ("dc ivac, %0" : : "r" (nAddress) : "memory");
+-
+-		if (nLength <= DATA_CACHE_LINE_LENGTH_MIN)
+-		{
+-			break;
+-		}
+-
+-		nAddress += DATA_CACHE_LINE_LENGTH_MIN;
+-		nLength  -= DATA_CACHE_LINE_LENGTH_MIN;
+-	}
+-
+-	DataSyncBarrier ();
++	(void)nAddress;
++	(void)nLength;
++	printf("%s not implemented.",__func__);
++	// while (1)
++	// {
++	// 	asm volatile ("dc ivac, %0" : : "r" (nAddress) : "memory");
++
++	// 	if (nLength <= DATA_CACHE_LINE_LENGTH_MIN)
++	// 	{
++	// 		break;
++	// 	}
++
++	// 	nAddress += DATA_CACHE_LINE_LENGTH_MIN;
++	// 	nLength  -= DATA_CACHE_LINE_LENGTH_MIN;
++	// }
++
++	// DataSyncBarrier ();
+ }
+ 
+ void CleanDataCacheRange (u64 nAddress, u64 nLength)
+ {
+-	while (1)
+-	{
+-		asm volatile ("dc cvac, %0" : : "r" (nAddress) : "memory");
+-
+-		if (nLength <= DATA_CACHE_LINE_LENGTH_MIN)
+-		{
+-			break;
+-		}
+-
+-		nAddress += DATA_CACHE_LINE_LENGTH_MIN;
+-		nLength  -= DATA_CACHE_LINE_LENGTH_MIN;
+-	}
+-
+-	DataSyncBarrier ();
++	(void)nAddress;
++	(void)nLength;
++	printf("%s not implemented.",__func__);
++	// while (1)
++	// {
++	// 	asm volatile ("dc cvac, %0" : : "r" (nAddress) : "memory");
++
++	// 	if (nLength <= DATA_CACHE_LINE_LENGTH_MIN)
++	// 	{
++	// 		break;
++	// 	}
++
++	// 	nAddress += DATA_CACHE_LINE_LENGTH_MIN;
++	// 	nLength  -= DATA_CACHE_LINE_LENGTH_MIN;
++	// }
++
++	// DataSyncBarrier ();
+ }
+ 
+ void CleanAndInvalidateDataCacheRange (u64 nAddress, u64 nLength)
+ {
+-	while (1)
+-	{
+-		asm volatile ("dc civac, %0" : : "r" (nAddress) : "memory");
+-
+-		if (nLength <= DATA_CACHE_LINE_LENGTH_MIN)
+-		{
+-			break;
+-		}
+-
+-		nAddress += DATA_CACHE_LINE_LENGTH_MIN;
+-		nLength  -= DATA_CACHE_LINE_LENGTH_MIN;
+-	}
+-
+-	DataSyncBarrier ();
++	(void)nAddress;
++	(void)nLength;
++	printf("%s not implemented.",__func__);
++	// while (1)
++	// {
++	// 	asm volatile ("dc civac, %0" : : "r" (nAddress) : "memory");
++
++	// 	if (nLength <= DATA_CACHE_LINE_LENGTH_MIN)
++	// 	{
++	// 		break;
++	// 	}
++
++	// 	nAddress += DATA_CACHE_LINE_LENGTH_MIN;
++	// 	nLength  -= DATA_CACHE_LINE_LENGTH_MIN;
++	// }
++
++	// DataSyncBarrier ();
+ }
+ 
+ void SyncDataAndInstructionCache (void)
+ {
+-	CleanDataCache ();
+-	//DataSyncBarrier ();		// included in CleanDataCache()
++	printf("%s not implemented.",__func__);
++	// CleanDataCache ();
++	// //DataSyncBarrier ();		// included in CleanDataCache()
+ 
+-	InvalidateInstructionCache ();
+-	DataSyncBarrier ();
++	// InvalidateInstructionCache ();
++	// DataSyncBarrier ();
+ 
+-	InstructionSyncBarrier ();
++	// InstructionSyncBarrier ();
+ }
