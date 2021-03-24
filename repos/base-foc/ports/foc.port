@@ -3,11 +3,11 @@ VERSION           := git
 DOWNLOADS         := mk.git foc.git l4re-core.git drivers-frst.git bootstrap.git
 
 URL(mk)           := https://github.com/kernkonzept/mk.git
-REV(mk)           := dc4501f9cc3910c2038e0703ffdcd9062d2610e1
+REV(mk)           := 561e1d65762de3c88dc6154113ee5869dd425e5d
 DIR(mk)           := src/kernel/foc/l4
 
 URL(foc)          := https://github.com/kernkonzept/fiasco.git
-REV(foc)          := 4367c50b1df878604b9833d4b41ae311d6e12e03
+REV(foc)          := 834d17d9bd2a208e7a265a462df3db9895d0d04c
 DIR(foc)          := src/kernel/foc/kernel/fiasco
 
 URL(l4re-core)    := https://github.com/kernkonzept/l4re-core.git
@@ -15,11 +15,11 @@ REV(l4re-core)    := fe794038e477e5a54762126689483c0e91a177a8
 DIR(l4re-core)    := src/kernel/foc/l4/pkg/l4re-core
 
 URL(drivers-frst) := https://github.com/kernkonzept/drivers-frst.git
-REV(drivers-frst) := ce2d7d33294cb7034a4226912463b24f6ffe1bc7
+REV(drivers-frst) := 2b9298ca5d2eb323f7aaded8ad1beed5c7fc1d6e
 DIR(drivers-frst) := src/kernel/foc/l4/pkg/drivers-frst
 
 URL(bootstrap)    := https://github.com/kernkonzept/bootstrap.git
-REV(bootstrap)    := 36500c1253f46f527098febd4da7cbc9d0e2c218
+REV(bootstrap)    := 866445333d0fa0ad4a57f5364d9cbe421580465e
 DIR(bootstrap)    := src/kernel/foc/l4/pkg/bootstrap
 
 PATCHES           := $(addprefix patches/,$(notdir $(wildcard $(REP_DIR)/patches/*.patch)))
