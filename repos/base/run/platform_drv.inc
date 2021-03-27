@@ -89,6 +89,7 @@ proc append_platform_drv_build_components {} {
 proc platform_drv_binary {} {
 	if {[have_spec imx53]    } { return imx53_platform_drv     }
 	if {[have_spec rpi]      } { return rpi_platform_drv       }
+	if {[have_spec rpi4]     } { return rpi4_platform_drv      }
 	if {[have_spec x86]      } { return platform_drv           }
 	return no_platform_drv_available
 }

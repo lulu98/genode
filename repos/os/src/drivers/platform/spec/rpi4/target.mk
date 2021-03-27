@@ -1,5 +1,5 @@
-TARGET   = rpi_platform_drv
-REQUIRES = arm_v8
+TARGET   = rpi4_platform_drv
+REQUIRES = arm_v8a
 SRC_CC   = main.cc
 INC_DIR += ${PRG_DIR} $(call select_from_repositories,include/spec/rpi)
 LIBS     = base

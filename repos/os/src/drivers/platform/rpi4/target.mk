@@ -1,5 +1,5 @@
-TARGET   = rpi_new_platform_drv
-REQUIRES = arm_v8
+TARGET   = rpi4_new_platform_drv
+REQUIRES = arm_v8a
 SRC_CC   = device.cc
 SRC_CC  += device_component.cc
 SRC_CC  += device_model_policy.cc

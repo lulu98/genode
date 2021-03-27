@@ -5,6 +5,7 @@ set lynx [installed_command lynx]
 
 build {
 	core init timer
+	drivers/platform/spec/rpi4
 	drivers/nic/rpi
 	test/lwip/http_srv
 	lib/vfs/lwip
@@ -34,13 +35,13 @@ install_config {
 		<provides> <service name="Timer"/> </provides>
 	</start>
 
+	<start name="rpi4_platform_drv" caps="200">
+		<resource name="RAM" quantum="8M"/>
+		<provides> <service name="Platform"/> </provides>
+	</start>
+
 	<start name="rpi_nic_drv" caps="1000" managing_system="yes" priority="-1">
 		<resource name="RAM" quantum="32M"/>
-		<binary name="init"/>
-		<route>
-			<service name="Timer"> <child name="timer"/> </service>
-			<any-service> <parent/> </any-service>
-		</route>
 		<provides> <service name="Nic"/> </provides>
 	</start>
 
@@ -59,6 +60,7 @@ install_config {
 
 set boot_modules {
 	core init timer
+	rpi4_platform_drv
 	rpi_nic_drv
 	ld.lib.so libc.lib.so vfs.lib.so vfs_lwip.lib.so test-lwip_httpsrv
 }
