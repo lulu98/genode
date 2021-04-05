@@ -7,8 +7,8 @@ SRC_CC  += rpi_device.cc
 SRC_CC  += main.cc
 SRC_CC  += session_component.cc
 SRC_CC  += root.cc
-INC_DIR  = $(PRG_DIR) $(REP_DIR)/src/drivers/platform/spec/arm
+INC_DIR  = $(PRG_DIR) $(REP_DIR)/src/drivers/platform/spec/arm64
 LIBS     = base
 
 vpath %.cc $(PRG_DIR)
-vpath %.cc $(REP_DIR)/src/drivers/platform/spec/arm
+vpath %.cc $(REP_DIR)/src/drivers/platform/spec/arm64

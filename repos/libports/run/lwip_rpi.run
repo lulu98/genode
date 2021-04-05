@@ -40,12 +40,12 @@ install_config {
 		<provides> <service name="Platform"/> </provides>
 	</start>
 
-	<start name="rpi_nic_drv" caps="1000" managing_system="yes" priority="-1">
+	<start name="rpi_nic_drv" caps="1000" managing_system="yes">
 		<resource name="RAM" quantum="32M"/>
 		<provides> <service name="Nic"/> </provides>
 	</start>
 
-	<start name="test-lwip_httpsrv" caps="120" priority="-1">
+	<start name="test-lwip_httpsrv" caps="120">
 		<resource name="RAM" quantum="4M"/>
 		<config>
 			<vfs>

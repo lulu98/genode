@@ -27,7 +27,11 @@
 /* driver code */
 #include "nic.h"
 
-class Root : public Genode::Root_component<LanRPi4, Genode::Single_client>
+namespace NIC {
+	class Root;
+}
+
+class NIC::Root : public Genode::Root_component<LanRPi4, Genode::Single_client>
 {
 	private:
 
@@ -69,18 +73,33 @@ class Root : public Genode::Root_component<LanRPi4, Genode::Single_client>
 		  _env(env) { }
 };
 
-
-void Component::construct(Genode::Env &env)
+struct Main
 {
-	static Genode::Heap heap(env.ram(), env.rm());
-	static Root         nic_root(env, heap);
-	Genode::log("--- Raspberry Pi NIC driver started ---");
-	env.parent().announce(env.ep().manage(nic_root));
-}
+	Genode::Env  	&	env;
+	Genode::Heap 		heap { env.ram(), env.rm() };
+	NIC::Root         	nic_root { env, heap };
+
+	Main(Genode::Env &env) : env(env) {
+		Genode::log("--- Raspberry Pi NIC driver started ---");
+		env.parent().announce(env.ep().manage(nic_root));
+	}
+};
+
 
 #include <libc/component.h>
-void Libc::Component::construct(Libc::Env &env)
-{
-	(void)env;
-	return;
-}
+void Libc::Component::construct(Libc::Env &env) { static Main m(env); }
+
+// void Component::construct(Genode::Env &env)
+// {
+// 	static Genode::Heap heap(env.ram(), env.rm());
+// 	static Root         nic_root(env, heap);
+// 	Genode::log("--- Raspberry Pi NIC driver started ---");
+// 	env.parent().announce(env.ep().manage(nic_root));
+// }
+
+// #include <libc/component.h>
+// void Libc::Component::construct(Libc::Env &env)
+// {
+// 	(void)env;
+// 	return;
+// }

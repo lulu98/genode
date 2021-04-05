@@ -227,7 +227,7 @@ class Genode::Root_component : public Rpc_object<Typed_root<SESSION_TYPE> >,
 		 * affinity, it suffices to override the overload without the
 		 * affinity argument.
 		 *
-		 * \throw Out_of_ram 
+		 * \throw Out_of_ram
 		 * \throw Out_of_caps
 		 * \throw Service_denied
 		 * \throw Insufficient_cap_quota

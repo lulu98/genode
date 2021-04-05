@@ -112,7 +112,7 @@ struct Main
 
 void Component::construct(Genode::Env &env)
 {
-	Genode::log("--- Raspberry Pi platform driver ---");
+	Genode::log("--- Raspberry Pi 4 platform driver ---");
 
 	static Main main(env);
 }
